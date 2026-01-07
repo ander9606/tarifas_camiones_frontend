@@ -148,11 +148,23 @@ export default function TarifasPage() {
 
   const handleSave = async (nuevaTarifa) => {
     try {
-      await createTarifa({
-        tipoCamion: nuevaTarifa.tipoCamion,
-        precio: nuevaTarifa.precio,
-        ciudadId: parseInt(nuevaTarifa.ciudad)
-      })
+      // Si viene un array (múltiples tarifas del nuevo modal)
+      if (Array.isArray(nuevaTarifa)) {
+        for (const tarifa of nuevaTarifa) {
+          await createTarifa({
+            tipoCamion: tarifa.tipoCamion,
+            precio: tarifa.precio,
+            ciudadId: parseInt(tarifa.ciudadId)
+          })
+        }
+      } else {
+        // Si viene un objeto individual (formato antiguo)
+        await createTarifa({
+          tipoCamion: nuevaTarifa.tipoCamion,
+          precio: nuevaTarifa.precio,
+          ciudadId: parseInt(nuevaTarifa.ciudad)
+        })
+      }
       
       // Recargar datos
       const departamentosData = await getDepartamentos()
@@ -185,10 +197,10 @@ export default function TarifasPage() {
       }
 
       setTarifas(tarifasAgrupadas)
-      alert('Tarifa guardada exitosamente')
+      alert('Tarifas guardadas exitosamente')
     } catch (err) {
       console.error('Error guardando tarifa:', err)
-      alert('Error al guardar la tarifa')
+      alert('Error al guardar las tarifas')
     }
   }
 
