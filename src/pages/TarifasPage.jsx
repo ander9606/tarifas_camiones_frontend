@@ -148,25 +148,27 @@ export default function TarifasPage() {
 
   const handleSave = async (nuevaTarifa) => {
     try {
-      // Si viene un array (múltiples tarifas del nuevo modal)
-      if (Array.isArray(nuevaTarifa)) {
-        for (const tarifa of nuevaTarifa) {
-          await createTarifa({
-            tipoCamion: tarifa.tipoCamion,
-            precio: tarifa.precio,
-            ciudadId: parseInt(tarifa.ciudadId)
-          })
-        }
-      } else {
-        // Si viene un objeto individual (formato antiguo)
+      // Si viene un objeto, guardarlo (formato antiguo compatibilidad)
+      if (nuevaTarifa && typeof nuevaTarifa === 'object' && !Array.isArray(nuevaTarifa)) {
         await createTarifa({
-          tipoCamion: nuevaTarifa.tipoCamion,
-          precio: nuevaTarifa.precio,
-          ciudadId: parseInt(nuevaTarifa.ciudad)
+          tipoCamionId: nuevaTarifa.tipoCamionId || nuevaTarifa.tipoCamion,
+          tarifa: nuevaTarifa.tarifa || nuevaTarifa.precio,
+          ciudadId: parseInt(nuevaTarifa.ciudadId || nuevaTarifa.ciudad)
         })
       }
       
-      // Recargar datos
+      // Si viene un array (múltiples tarifas)
+      if (Array.isArray(nuevaTarifa)) {
+        for (const tarifa of nuevaTarifa) {
+          await createTarifa({
+            tipoCamionId: tarifa.tipoCamionId || tarifa.tipoCamion,
+            tarifa: tarifa.tarifa || tarifa.precio,
+            ciudadId: parseInt(tarifa.ciudadId || tarifa.ciudad)
+          })
+        }
+      }
+      
+      // Recargar datos (se ejecuta siempre, incluso si no hay nuevaTarifa)
       const departamentosData = await getDepartamentos()
       const tarifasAgrupadas = []
       
