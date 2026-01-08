@@ -8,14 +8,12 @@ export default function ModalTarifa({
   onClose, 
   onSave, 
   departamentos = [],
-  ciudades = [],
   filtroDepartamento = ''
 }) {
   const [ciudadesDelDpto, setCiudadesDelDpto] = useState([])
   const [dpto, setDpto] = useState(filtroDepartamento || '')
   const [ciudadSeleccionada, setCiudadSeleccionada] = useState('')
   const [tiposCamion, setTiposCamion] = useState([])
-  const [tarifasExistentes, setTarifasExistentes] = useState([])
   const [precios, setPrecios] = useState({})
   const [loading, setLoading] = useState(false)
 
@@ -31,7 +29,6 @@ export default function ModalTarifa({
     if (ciudadSeleccionada) {
       cargarTarifasYCamiones()
     } else {
-      setTarifasExistentes([])
       setPrecios({})
     }
   }, [ciudadSeleccionada])
@@ -52,7 +49,6 @@ export default function ModalTarifa({
         getTarifasPorCiudad(ciudadSeleccionada),
         getTiposCamion()
       ])
-      setTarifasExistentes(tarifas)
       setTiposCamion(tipos)
       
       // Inicializar precios con los existentes
@@ -155,26 +151,23 @@ export default function ModalTarifa({
               <div className="mb-6 bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase">Precios por Camión</h3>
                 <div className="space-y-3">
-                  {tiposCamion.map(tipo => {
-                    const tarifaExistente = tarifasExistentes.find(t => t.tipoCamionId === tipo.id)
-                    return (
-                      <div key={tipo.id} className="flex items-center gap-4 pb-3 border-b last:border-b-0">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-800">{tipo.nombre}</p>
-                          <p className="text-xs text-gray-500">{tipo.descripcion || 'Sin descripción'}</p>
-                        </div>
-                        <input
-                          type="number"
-                          value={precios[tipo.id] || ''}
-                          onChange={(e) => handlePrecioChange(tipo.id, e.target.value)}
-                          placeholder="Precio"
-                          className="w-32 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          required
-                        />
-                        <span className="text-xs text-gray-500 w-20">COP</span>
+                  {tiposCamion.map(tipo => (
+                    <div key={tipo.id} className="flex items-center gap-4 pb-3 border-b last:border-b-0">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-800">{tipo.nombre}</p>
+                        <p className="text-xs text-gray-500">{tipo.descripcion || 'Sin descripción'}</p>
                       </div>
-                    )
-                  })}
+                      <input
+                        type="number"
+                        value={precios[tipo.id] || ''}
+                        onChange={(e) => handlePrecioChange(tipo.id, e.target.value)}
+                        placeholder="Precio"
+                        className="w-32 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                      <span className="text-xs text-gray-500 w-20">COP</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 

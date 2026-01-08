@@ -337,7 +337,6 @@ export default function TarifasPage() {
           onClose={() => setModalOpen(false)}
           onSave={handleSave}
           departamentos={listaDepartamentos}
-          ciudades={listaCiudades}
           filtroDepartamento={filtroDepartamento}
         />
         {/* Modal para crear locaciones */}
