@@ -85,12 +85,12 @@ export default function TarifasPage() {
                 nombre: ciudad.nombre,
                 ciudadId: ciudad.id,
                 tipos: tarifasCiudad.map(t => {
-                  const tipo = tiposCamion.find(tc => tc.nombre === t.camion || tc.camion === t.camion);
+                  const tipo = tiposCamion.find(tc => tc.id === t.tipo_camion_id);
                   return {
                     id: t.id,
                     tipoCamion: t.camion,
                     precio: t.tarifa,
-                    descripcion: tipo ? tipo.descripcion : ''
+                    descripcion: tipo ? tipo.descripcion : t.descripcion || ''
                   };
                 })
               });
@@ -188,8 +188,9 @@ export default function TarifasPage() {
               ciudadId: ciudad.id,
               tipos: tarifasCiudad.map(t => ({
                 id: t.id,
-                tipoCamion: t.tipoCamion,
-                precio: t.precio
+                tipoCamion: t.camion,
+                precio: t.tarifa,
+                descripcion: t.descripcion || ''
               }))
             })
           }
