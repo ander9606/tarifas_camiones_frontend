@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCiudadesPorDepartamento } from '../api/ciudades.api'
-import { getTarifasPorCiudad } from '../api/tarifas.api'
+import { getTarifasPorCiudad, createTarifa, updateTarifa } from '../api/tarifas.api'
 import { getTiposCamion } from '../api/tiposCamion.api'
 
 export default function ModalTarifa({ 
@@ -14,8 +14,11 @@ export default function ModalTarifa({
   const [dpto, setDpto] = useState(filtroDepartamento || '')
   const [ciudadSeleccionada, setCiudadSeleccionada] = useState('')
   const [tiposCamion, setTiposCamion] = useState([])
+  const [tarifasExistentes, setTarifasExistentes] = useState({})
   const [precios, setPrecios] = useState({})
   const [loading, setLoading] = useState(false)
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (dpto) {
@@ -30,6 +33,7 @@ export default function ModalTarifa({
       cargarTarifasYCamiones()
     } else {
       setPrecios({})
+      setTarifasExistentes({})
     }
   }, [ciudadSeleccionada])
 
@@ -39,36 +43,104 @@ export default function ModalTarifa({
       setCiudadesDelDpto(data)
     } catch (err) {
       console.error('Error cargando ciudades:', err)
+      setError('Error al cargar ciudades')
     }
   }
 
   const cargarTarifasYCamiones = async () => {
     try {
       setLoading(true)
+      setError('')
       const [tarifas, tipos] = await Promise.all([
         getTarifasPorCiudad(ciudadSeleccionada),
         getTiposCamion()
       ])
       setTiposCamion(tipos)
       
-      // Inicializar precios con los existentes
+      // Guardar las tarifas existentes y sus IDs
+      const tarifasMap = {}
       const preciosIniciales = {}
       tarifas.forEach(tarifa => {
-        preciosIniciales[tarifa.tipoCamionId] = tarifa.precio
+        tarifasMap[tarifa.tipo_camion_id] = tarifa.id
+        preciosIniciales[tarifa.tipo_camion_id] = tarifa.tarifa
       })
+      setTarifasExistentes(tarifasMap)
       setPrecios(preciosIniciales)
     } catch (err) {
       console.error('Error cargando tarifas y camiones:', err)
+      setError('Error al cargar tarifas')
     } finally {
       setLoading(false)
     }
   }
 
   const handlePrecioChange = (tipoCamionId, valor) => {
+    const numValue = valor === '' ? '' : Number(valor)
     setPrecios(prev => ({
       ...prev,
-      [tipoCamionId]: Number(valor)
+      [tipoCamionId]: numValue
     }))
+  }
+
+  const validarDatos = () => {
+    // Validar que todos los precios estén completos
+    for (const tipo of tiposCamion) {
+      const precio = precios[tipo.id]
+      if (precio === '' || precio === undefined || precio === null) {
+        setError(`El precio para ${tipo.nombre} es requerido`)
+        return false
+      }
+      if (Number(precio) <= 0) {
+        setError(`El precio para ${tipo.nombre} debe ser mayor a 0`)
+        return false
+      }
+    }
+    return true
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    if (!validarDatos()) {
+      return
+    }
+
+    try {
+      setGuardando(true)
+      setError('')
+
+      // Guardar cada tarifa (crear o actualizar)
+      for (const tipo of tiposCamion) {
+        const tarifa = precios[tipo.id]
+        const tarifaId = tarifasExistentes[tipo.id]
+
+        const payload = {
+          ciudadId: parseInt(ciudadSeleccionada),
+          tipoCamionId: tipo.id,
+          tarifa: Number(tarifa)
+        }
+
+        if (tarifaId) {
+          // Actualizar tarifa existente
+          await updateTarifa(tarifaId, payload)
+        } else {
+          // Crear nueva tarifa
+          await createTarifa(payload)
+        }
+      }
+
+      // Llamar a onSave si existe
+      if (onSave) {
+        onSave()
+      }
+
+      onClose()
+    } catch (err) {
+      console.error('Error guardando tarifas:', err)
+      setError(err.response?.data?.error || 'Error al guardar las tarifas')
+    } finally {
+      setGuardando(false)
+    }
   }
 
   if (!isOpen) return null
@@ -84,6 +156,12 @@ export default function ModalTarifa({
 
         {/* Form */}
         <div className="p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-5 mb-6">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase">
@@ -94,6 +172,7 @@ export default function ModalTarifa({
                 onChange={(e) => {
                   setDpto(e.target.value)
                   setCiudadSeleccionada('')
+                  setError('')
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
@@ -113,7 +192,10 @@ export default function ModalTarifa({
               </label>
               <select
                 value={ciudadSeleccionada}
-                onChange={(e) => setCiudadSeleccionada(e.target.value)}
+                onChange={(e) => {
+                  setCiudadSeleccionada(e.target.value)
+                  setError('')
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
                 disabled={!dpto}
@@ -135,19 +217,7 @@ export default function ModalTarifa({
           )}
 
           {!loading && ciudadSeleccionada && tiposCamion.length > 0 && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                const tarifasAGuardar = tiposCamion.map(tipo => ({
-                  tipoCamionId: tipo.id,
-                  tipoCamion: tipo.nombre,
-                  precio: precios[tipo.id] || 0,
-                  ciudadId: ciudadSeleccionada
-                }))
-                onSave(tarifasAGuardar)
-                onClose()
-              }}
-            >
+            <form onSubmit={handleSubmit}>
               <div className="mb-6 bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase">Precios por Camión</h3>
                 <div className="space-y-3">
@@ -159,7 +229,9 @@ export default function ModalTarifa({
                       </div>
                       <input
                         type="number"
-                        value={precios[tipo.id] || ''}
+                        step="0.01"
+                        min="0"
+                        value={precios[tipo.id] ?? ''}
                         onChange={(e) => handlePrecioChange(tipo.id, e.target.value)}
                         placeholder="Precio"
                         className="w-32 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -174,16 +246,18 @@ export default function ModalTarifa({
               <div className="flex gap-3 pt-4 border-t">
                 <button
                   type="button"
-                  className="flex-1 px-4 py-2 rounded-md border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition text-sm"
+                  className="flex-1 px-4 py-2 rounded-md border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition text-sm disabled:opacity-50"
                   onClick={onClose}
+                  disabled={guardando}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition text-sm"
+                  className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={guardando}
                 >
-                  Guardar Tarifas
+                  {guardando ? 'Guardando...' : 'Guardar Tarifas'}
                 </button>
               </div>
             </form>
