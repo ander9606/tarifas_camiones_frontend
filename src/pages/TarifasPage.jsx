@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import * as XLSX from 'xlsx'
 import ListaTarifas from '../components/ListaTarifas'
+import ListaDepartamentos from '../components/ListaDepartamentos'
 import ModalTarifa from '../components/ModalTarifa'
 import ModalLocacion from '../components/ModalLocacion'
 import ModalEditarCamion from '../components/ModalEditarCamion'
@@ -54,6 +55,7 @@ export default function TarifasPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [modalEditarCamionOpen, setModalEditarCamionOpen] = useState(false)
+  const [showListaDepartamentos, setShowListaDepartamentos] = useState(false)
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -242,13 +244,25 @@ export default function TarifasPage() {
               <h1 className="text-3xl font-bold text-gray-900">Gestión de Tarifas</h1>
               <p className="text-gray-600 text-sm mt-1">Administra las tarifas de transporte por departamento y ciudad</p>
             </div>
-            <div className="text-4xl">🚚</div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowListaDepartamentos(!showListaDepartamentos)}
+                className="text-gray-500 hover:text-gray-700 text-sm font-medium transition hover:underline"
+              >
+                {showListaDepartamentos ? 'Ver Tarifas' : 'Gestionar Depts'}
+              </button>
+              <div className="text-4xl">🚚</div>
+            </div>
           </div>
         </div>
       </header>
 
 
       <div className="max-w-6xl mx-auto p-6">
+        {showListaDepartamentos ? (
+          <ListaDepartamentos />
+        ) : (
+          <>
         {/* Barra de acciones principales */}
         <div className="flex flex-wrap gap-3 mb-8 bg-gradient-to-r from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200 shadow-sm">
           <button
@@ -356,6 +370,8 @@ export default function TarifasPage() {
           isOpen={modalEditarCamionOpen}
           onClose={() => setModalEditarCamionOpen(false)}
         />
+          </>
+        )}
       </div>
     </div>
   )

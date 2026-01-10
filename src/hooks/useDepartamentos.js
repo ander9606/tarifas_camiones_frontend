@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getDepartamentos } from '../api/departamentos.api'
+import { getDepartamentos, deleteDepartamento } from '../api/departamentos.api'
 
 export function useDepartamentos() {
   const [departamentos, setDepartamentos] = useState([])
@@ -18,6 +18,16 @@ export function useDepartamentos() {
     }
   }
 
+  const eliminar = async (id) => {
+    try {
+      await deleteDepartamento(id)
+      setDepartamentos(departamentos.filter(d => d.id !== id))
+    } catch (err) {
+      setError('Error al eliminar departamento: ' + err.message)
+      throw err
+    }
+  }
+
   useEffect(() => {
     cargarDepartamentos()
   }, [])
@@ -26,6 +36,7 @@ export function useDepartamentos() {
     departamentos,
     loading,
     error,
-    reload: cargarDepartamentos
+    reload: cargarDepartamentos,
+    eliminar
   }
 }
