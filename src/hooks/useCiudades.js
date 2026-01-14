@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getCiudadesPorDepartamento, deleteCiudad } from '../api/ciudades.api'
+import { getCiudadesPorDepartamento, deleteCiudad, createCiudad } from '../api/ciudades.api'
 
 export function useCiudades() {
   const [ciudades, setCiudades] = useState([])
@@ -12,10 +12,23 @@ export function useCiudades() {
       setLoading(true)
       const data = await getCiudadesPorDepartamento(departamentoId)
       setCiudades(data)
+      return data
     } catch (err) {
       setError('Error cargando ciudades: ' + err.message)
+      throw err
     } finally {
       setLoading(false)
+    }
+  }
+
+  const crear = async (payload) => {
+    try {
+      const nuevaCiudad = await createCiudad(payload)
+      setCiudades([...ciudades, nuevaCiudad])
+      return nuevaCiudad
+    } catch (err) {
+      setError('Error creando ciudad: ' + err.message)
+      throw err
     }
   }
 
@@ -34,6 +47,7 @@ export function useCiudades() {
     loading,
     error,
     cargarCiudades,
+    crear,
     eliminar
   }
 }
