@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getDepartamentos, deleteDepartamento } from '../api/departamentos.api'
+import { getDepartamentos, deleteDepartamento, createDepartamento } from '../api/departamentos.api'
 
 export function useDepartamentos() {
   const [departamentos, setDepartamentos] = useState([])
@@ -15,6 +15,17 @@ export function useDepartamentos() {
       setError('Error cargando departamentos: ' + err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const crear = async (payload) => {
+    try {
+      const nuevoDept = await createDepartamento(payload)
+      setDepartamentos([...departamentos, nuevoDept])
+      return nuevoDept
+    } catch (err) {
+      setError('Error creando departamento: ' + err.message)
+      throw err
     }
   }
 
@@ -37,6 +48,7 @@ export function useDepartamentos() {
     loading,
     error,
     reload: cargarDepartamentos,
+    crear,
     eliminar
   }
 }

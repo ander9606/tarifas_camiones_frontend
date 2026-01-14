@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getCiudadesPorDepartamento } from '../api/ciudades.api'
 import { getTarifasPorCiudad, createTarifa, updateTarifa } from '../api/tarifas.api'
 import { getTiposCamion } from '../api/tiposCamion.api'
+import { MdClose } from 'react-icons/md'
 
 export default function ModalTarifa({ 
   isOpen, 
@@ -149,9 +150,18 @@ export default function ModalTarifa({
     <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-blue-600 text-white px-6 py-4">
-          <h2 className="text-lg font-semibold">Gestionar Tarifas</h2>
-          <p className="text-blue-100 text-xs mt-1">Selecciona una ciudad y actualiza los precios de los camiones</p>
+        <div className="bg-blue-600 text-white px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Gestionar Tarifas</h2>
+            <p className="text-blue-100 text-xs mt-1">Selecciona una ciudad y actualiza los precios de los camiones</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white hover:bg-blue-700 p-2 rounded-lg transition"
+            title="Cerrar"
+          >
+            <MdClose size={24} />
+          </button>
         </div>
 
         {/* Form */}
